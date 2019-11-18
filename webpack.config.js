@@ -1,51 +1,54 @@
-const path = require('path');
-const webpack = require('webpack');
+var path = require('path');
 
-const env = process.env.NODE_ENV;
+const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 
-const config = {
+module.exports = {
   entry: './src/index.js',
-
+  mode: 'production',
   output: {
-    library: 'world-map-geojson',
+    filename: 'index.js',
+    path: path.resolve(__dirname, 'dist'),
     libraryTarget: 'umd',
   },
-
   module: {
-    loaders: [{
-      test: /\.(js|jsx)$/,
-      exclude: /node_modules/,
-      include: [
-        path.resolve(__dirname, 'src'),
-      ],
-      loader: 'babel-loader',
-    }],
+    rules: [{
+      test: /\.js?$/,
+      use: [
+        {
+          loader: require.resolve('babel-loader'),
+          options: {
+            compact: true,
+          }
+        }
+      ]
+    }]
   },
-
-  devtool: 'source-map',
-
-  plugins: [
-    new webpack.DefinePlugin({
-      'process.env.NODE_ENV': JSON.stringify(env),
-    }),
-  ],
+  optimization: {
+    minimizer: [
+      new UglifyJsPlugin({
+        uglifyOptions: {
+          parse: {
+            ecma: 8
+          },
+          compress: {
+            ecma: 5,
+            warnings: false,
+            comparisons: false
+          },
+          mangle: {
+            safari10: true
+          },
+          output: {
+            ecma: 5,
+            comments: false,
+            ascii_only: true
+          }
+        },
+        parallel: true,
+        cache: true,
+        sourceMap: false
+      })
+    ]
+  }
 };
 
-if (env === 'production') {
-  config.plugins.push(
-    new webpack.optimize.UglifyJsPlugin({
-      compressor: {
-        pure_getters: true,
-        unsafe: true,
-        unsafe_comps: true,
-        warnings: false,
-      },
-      output: {
-        comments: false,
-      },
-      sourceMap: false,
-    })
-  );
-}
-
-module.exports = config;
